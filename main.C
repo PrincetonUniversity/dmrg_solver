@@ -86,6 +86,7 @@ int main(int argc, char* argv[])
   cout << "\tIntializing MPS" << endl;
   Qshapes<Quantum> qp = {Quantum(1), Quantum(-1), Quantum(0)};
   Dshapes dp = {1, 1, 2};
+  physical(qp, dp);
   MPS<Quantum> A = create(nsite, Quantum::zero(), qp, dp, M, random_gen);
   init(sites, A, M);
 

@@ -8,6 +8,12 @@ using std::cout;
 using std::endl;
 using std::getline;
 
+void physical(Qshapes<Quantum>& qp, Dshapes& dp) {
+  qp = {Quantum(1), Quantum(-1), Quantum(0)};
+  dp = {1, 1, 2};
+  // up, down, {empty, double}
+}
+
 inline TVector<Quantum, 4> qarray(int ql, int qbra, int qket, int qr) {
   return make_array(Quantum(ql), Quantum(qbra), -Quantum(qket), -Quantum(qr));
 }
@@ -41,7 +47,7 @@ MPOGen_Hubbard_BCS::MPOGen_Hubbard_BCS(const char* m_input): MPOGen(m_input) {
     read_matrix(d[i], "d(site "+std::to_string(i)+")", in);
   }
   in.close();
-  physical();
+  physical(qp, dp);
 }
 
 void MPOGen_Hubbard_BCS::read_matrix(Matrix& A, string name, std::ifstream& in) {
@@ -334,12 +340,6 @@ Matrix MPOGen_Hubbard_BCS::kappa(const MPS<Quantum>& A) const {
   }
   }
   return std::move(kappa1);
-}
-
-void MPOGen_Hubbard_BCS::physical() {
-  qp = {Quantum(1), Quantum(-1), Quantum(0)};
-  dp = {1, 1, 2};
-  // up, down, {empty, double}
 }
 
 MPOGen_Hubbard_BCS::~MPOGen_Hubbard_BCS() {
