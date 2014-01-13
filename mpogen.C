@@ -18,6 +18,20 @@ void physical(Qshapes<Quantum>& qp, Dshapes& dp) {
   // up, down, {empty, double}
 }
 
+void zero(MPO<Quantum>& mpo) {
+  int nsite = mpo.size();
+  Qshapes<Quantum> qzero;
+  qzero.push_back(Quantum(0));
+  Dshapes dzero(qzero.size(), 1);
+  Qshapes<Quantum> qp;
+  Dshapes dp;
+  physical(qp, dp);
+  for (int i = 0; i < nsite; ++i) {
+    mpo[i].resize(Quantum::zero(), make_array(qzero, qp, -qp, -qzero), make_array(dzero, dp, dp, dzero));
+    mpo[i] = 0;
+  }
+}
+
 MPO<Quantum> create_op(const ColumnVector& c, Spin s) {
   vector<Qshapes<Quantum>> qr;
   vector<Dshapes> dr;
@@ -222,17 +236,6 @@ void MPOGen_Hubbard_BCS::read_matrix(Matrix& A, string name, std::ifstream& in) 
     for (int j = 0; j < nsite; ++j) {
       in >> A(i+1, j+1);
     }
-  }
-}
-
-void MPOGen_Hubbard_BCS::zero(MPO<Quantum>& mpo) {
-  assert(nsite == mpo.size());
-  Qshapes<Quantum> qzero;
-  qzero.push_back(Quantum(0));  
-  Dshapes dzero(qzero.size(), 1);
-  for (int i = 0; i < nsite; ++i) {
-    mpo[i].resize(Quantum::zero(), make_array(qzero, qp, -qp, -qzero), make_array(dzero, dp, dp, dzero));
-    mpo[i] = 0;
   }
 }
 

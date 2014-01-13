@@ -29,6 +29,7 @@ public:
 
 enum class Spin: int {Up = 1, Down = -1};
 void physical(Qshapes<Quantum>&, Dshapes&);
+void zero(MPO<Quantum>&);
 MPO<Quantum> create_op(const ColumnVector&, Spin);
 MPO<Quantum> anni_op(const ColumnVector&, Spin);
 
@@ -36,7 +37,6 @@ class MPOGen_Hubbard_BCS: protected MPOGen {
 private:
   // functions
   void read_matrix(Matrix&, string, std::ifstream&);
-  void zero(MPO<Quantum>&);
 public:
   MPOGen_Hubbard_BCS(const char* m_input);
   virtual const MPO<Quantum> generate(int M = 0) final;
