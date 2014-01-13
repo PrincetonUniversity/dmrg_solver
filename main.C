@@ -70,9 +70,10 @@ int main(int argc, char* argv[])
   srand(time(NULL));
   
   string prefix(argv[1]);
-  MPOGen_Hubbard_BCS hgen((prefix + "/DMRG.in").c_str());
+  MPOGen* hgen = new MPOGen_Hubbard_BCS((prefix + "/DMRG.in").c_str());
+  //MPOGen_Hubbard_BCS hgen((prefix + "/DMRG.in").c_str());
   cout << "\tConstructing MPOs" << endl; 
-  MPO<Quantum> H = hgen.generate(); // matrix product operator
+  MPO<Quantum> H = hgen->generate(); // matrix product operator
   int nsite = H.size();
   //
   // define working space

@@ -35,7 +35,7 @@ MPO<Quantum> anni_op(const ColumnVector&, Spin);
 Matrix rdm(const MPS<Quantum>&, Spin); // <a_i\sigma^\dagger a_j\sigma>
 Matrix kappa(const MPS<Quantum>& A, bool symm = true); // <a_i\up a_j\down>
 
-class MPOGen_Hubbard_BCS: protected MPOGen {
+class MPOGen_Hubbard_BCS: public MPOGen {
 private:
   // functions
   void read_matrix(Matrix&, string, std::ifstream&);

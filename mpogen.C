@@ -263,7 +263,6 @@ Matrix kappa(const MPS<Quantum>& A, bool symm) {
 
 MPOGen_Hubbard_BCS::MPOGen_Hubbard_BCS(const char* m_input): MPOGen(m_input) {
   // open input file
-  
   std::ifstream in(input.c_str());
   in >> nsite >> ntei >> U;
   H0.ReSize(nsite, nsite);
@@ -290,7 +289,6 @@ MPOGen_Hubbard_BCS::MPOGen_Hubbard_BCS(const char* m_input): MPOGen(m_input) {
     read_matrix(d[i], "d(site "+std::to_string(i)+")", in);
   }
   in.close();
-  physical(qp, dp);
 }
 
 void MPOGen_Hubbard_BCS::read_matrix(Matrix& A, string name, std::ifstream& in) {
