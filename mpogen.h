@@ -49,7 +49,5 @@ private:
   double U;
   Matrix H0, D0;
   vector<Matrix> f, g, d;
-  Qshapes<Quantum> qp;
-  Dshapes dp;
 };
 #endif

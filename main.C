@@ -121,8 +121,8 @@ int main(int argc, char* argv[])
   }
 
   ofstream frdm;
+  frdm.precision(16);
   frdm.open(prefix+"/1RDM.A");
-  frdm.precision(16);  
   frdm << "!RDM.A" << setw(4) << nsite << endl << setw(20) << fixed << rdm(A, Spin::Up);
   frdm.close();
   frdm.open(prefix+"/1RDM.B");
