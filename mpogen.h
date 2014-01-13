@@ -32,6 +32,8 @@ void physical(Qshapes<Quantum>&, Dshapes&);
 void zero(MPO<Quantum>&);
 MPO<Quantum> create_op(const ColumnVector&, Spin);
 MPO<Quantum> anni_op(const ColumnVector&, Spin);
+Matrix rdm(const MPS<Quantum>&, Spin); // <a_i\sigma^\dagger a_j\sigma>
+Matrix kappa(const MPS<Quantum>& A, bool symm = true); // <a_i\up a_j\down>
 
 class MPOGen_Hubbard_BCS: protected MPOGen {
 private:
@@ -41,10 +43,6 @@ public:
   MPOGen_Hubbard_BCS(const char* m_input);
   virtual const MPO<Quantum> generate(int M = 0) final;
   ~MPOGen_Hubbard_BCS();
-
-
-Matrix rdm(const MPS<Quantum>&, Spin) const; // <a_i\sigma^\dagger a_j\sigma>
-Matrix kappa(const MPS<Quantum>&) const; // <a_i\up a_j\down>
 private:
   // data
   int nsite, ntei; // number of sites, number of 2body terms

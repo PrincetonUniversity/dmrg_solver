@@ -123,13 +123,13 @@ int main(int argc, char* argv[])
   ofstream frdm;
   frdm.open(prefix+"/1RDM.A");
   frdm.precision(16);  
-  frdm << "!RDM.A" << setw(4) << nsite << endl << setw(20) << fixed << hgen.rdm(A, Spin::Up);
+  frdm << "!RDM.A" << setw(4) << nsite << endl << setw(20) << fixed << rdm(A, Spin::Up);
   frdm.close();
   frdm.open(prefix+"/1RDM.B");
-  frdm << "!RDM.B" << setw(4) << nsite << endl << setw(20) << fixed << hgen.rdm(A, Spin::Down);
+  frdm << "!RDM.B" << setw(4) << nsite << endl << setw(20) << fixed << rdm(A, Spin::Down);
   frdm.close();
   frdm.open(prefix+"/KAPPA");
-  frdm << "!KAPPA" << setw(4) << nsite << endl << setw(20) << fixed << hgen.kappa(A);
+  frdm << "!KAPPA" << setw(4) << nsite << endl << setw(20) << fixed << kappa(A);
   frdm.close();
   return 0;
 }

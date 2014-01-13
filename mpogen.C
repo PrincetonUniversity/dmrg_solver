@@ -194,6 +194,73 @@ MPO<Quantum> anni_op(const ColumnVector& c, Spin s) {
   return std::move(ad);
 }
 
+Matrix rdm(const MPS<Quantum>& A, Spin s) {
+  int nsite = A.size();
+  vector<MPO<Quantum>> a(nsite);
+  SymmetricMatrix rdm1(nsite);
+  ColumnVector coef(nsite);
+  for (int i = 0; i < nsite; ++i) {
+    coef = 0.;
+    coef(i+1) = 1.;
+    a[i] = anni_op(coef, s);
+  }
+  vector <MPS<Quantum>> temp(nsite);
+  // now build 1rdm
+  #pragma omp parallel default(none) shared(A, rdm1, a, temp, nsite)
+  {
+  # pragma omp for schedule(guided, 1)
+  for (int i = 0; i < nsite; ++i) {
+    temp[i] = a[i] * A;
+  }
+  # pragma omp barrier
+  # pragma omp for schedule(dynamic, 1)
+  for (int i = 0; i < nsite; ++i) {
+    for (int j = i; j < nsite; ++j) {
+      rdm1(i+1, j+1) = dot(MPS_DIRECTION::Left, temp[j], temp[i]);
+    }
+  }
+  }
+  return std::move(rdm1);
+}
+
+Matrix kappa(const MPS<Quantum>& A, bool symm) {
+  int nsite = A.size();
+  vector <MPO<Quantum>> a_u(nsite), a_d(nsite);
+  ColumnVector coef(nsite);  
+  for (int i = 0; i < nsite; ++i) {
+    coef = 0.;
+    coef(i+1) = 1.;
+    a_u[i] = create_op(coef, Spin::Up);
+    a_d[i] = anni_op(coef, Spin::Down);
+  }
+  vector <MPS<Quantum>> temp_u(nsite), temp_d(nsite);    
+  # pragma omp parallel for default(none) shared(A, a_u, a_d, temp_u, temp_d, nsite) schedule(guided, 1)
+  for (int i = 0; i < nsite; ++i) {
+    temp_u[i] = a_u[i] * A;
+    temp_d[i] = a_d[i] * A;
+  }
+
+  if (symm) {
+    SymmetricMatrix kappa1(nsite);
+    # pragma omp parallel for default(none) shared(kappa1, temp_u, temp_d, nsite) schedule(dynamic, 1)
+    for (int i = 0; i < nsite; ++i) {
+      for (int j = i; j < nsite; ++j) {
+        kappa1(i+1, j+1) = dot(MPS_DIRECTION::Left, temp_d[j], temp_u[i]);
+      }
+    }
+    return std::move(kappa1);    
+  } else {
+    Matrix kappa1(nsite, nsite);
+    # pragma omp parallel for default(none) shared(kappa1, temp_u, temp_d, nsite) schedule(guided, 1)    
+    for (int i = 0; i < nsite; ++i) {
+      for (int j = 0; j < nsite; ++j) {
+        kappa1(i+1, j+1) = dot(MPS_DIRECTION::Left, temp_d[j], temp_u[i]);
+      }
+    }
+    return std::move(kappa1);    
+  }
+}
+
 MPOGen_Hubbard_BCS::MPOGen_Hubbard_BCS(const char* m_input): MPOGen(m_input) {
   // open input file
   
@@ -294,65 +361,6 @@ const MPO<Quantum> MPOGen_Hubbard_BCS::generate(int M) {
   }
 
   return std::move(H);
-}
-
-Matrix MPOGen_Hubbard_BCS::rdm(const MPS<Quantum>& A, Spin s) const {
-  vector<MPO<Quantum>> a(nsite);
-  SymmetricMatrix rdm1(nsite);
-  ColumnVector coef(nsite);
-  for (int i = 0; i < nsite; ++i) {
-    coef = 0.;
-    coef(i+1) = 1.;
-    a[i] = anni_op(coef, s);
-  }
-  vector <MPS<Quantum>> temp(nsite);
-  // now build 1rdm
-  int size = nsite;
-  #pragma omp parallel default(none) shared(A, rdm1, a, temp, size)
-  {
-  # pragma omp for schedule(guided, 1)
-  for (int i = 0; i < size; ++i) {
-    temp[i] = a[i] * A;
-  }
-  # pragma omp barrier
-  # pragma omp for schedule(dynamic, 1)
-  for (int i = 0; i < size; ++i) {
-    for (int j = i; j < size; ++j) {
-      rdm1(i+1, j+1) = dot(MPS_DIRECTION::Left, temp[j], temp[i]);
-    }
-  }
-  }
-  return std::move(rdm1);
-}
-
-Matrix MPOGen_Hubbard_BCS::kappa(const MPS<Quantum>& A) const {
-  vector <MPO<Quantum>> a_u(nsite), a_d(nsite);
-  SymmetricMatrix kappa1(nsite);
-  ColumnVector coef(nsite);
-  for (int i = 0; i < nsite; ++i) {
-    coef = 0.;
-    coef(i+1) = 1.;
-    a_u[i] = create_op(coef, Spin::Up);
-    a_d[i] = anni_op(coef, Spin::Down);
-  }
-  vector <MPS<Quantum>> temp_u(nsite), temp_d(nsite);
-  int size = nsite;
-  #pragma omp parallel default(none) shared(A, kappa1, a_u, a_d, temp_u, temp_d, size)
-  {
-  # pragma omp for schedule(guided, 1)
-  for (int i = 0; i < size; ++i) {
-    temp_u[i] = a_u[i] * A;
-    temp_d[i] = a_d[i] * A;
-  }
-  # pragma omp barrier
-  # pragma omp for schedule(dynamic, 1)
-  for (int i = 0; i < size; ++i) {
-    for (int j = i; j <size; ++j) {
-      kappa1(i+1, j+1) = dot(MPS_DIRECTION::Left, temp_d[j], temp_u[i]);
-    }
-  }
-  }
-  return std::move(kappa1);
 }
 
 MPOGen_Hubbard_BCS::~MPOGen_Hubbard_BCS() {
