@@ -42,7 +42,7 @@ private:
 public:
   MPOGen_Hubbard_BCS(const char* m_input);
   virtual const MPO<Quantum> generate(int M = 0) final;
-  ~MPOGen_Hubbard_BCS();
+  ~MPOGen_Hubbard_BCS() {}
 private:
   // data
   int nsite, ntei; // number of sites, number of 2body terms
@@ -50,4 +50,21 @@ private:
   Matrix H0, D0;
   vector<Matrix> f, g, d;
 };
+
+class MPOGen_Hubbard_UBCS: public MPOGen {
+private:
+  // functions
+  void read_matrix(Matrix&, string, std::ifstream&);
+public:
+  MPOGen_Hubbard_UBCS(const char* m_input);
+  virtual const MPO<Quantum> generate(int M = 0) final;
+  ~MPOGen_Hubbard_UBCS() {}
+private:
+  // data
+  int nsite, ntei; // number of sites, number of 2body terms
+  double U;
+  Matrix H0a, H0b, D0;
+  vector<Matrix> fa, fb, ga, gb, da, db;
+};
+
 #endif

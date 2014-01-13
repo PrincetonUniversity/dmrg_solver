@@ -361,5 +361,116 @@ const MPO<Quantum> MPOGen_Hubbard_BCS::generate(int M) {
   return std::move(H);
 }
 
-MPOGen_Hubbard_BCS::~MPOGen_Hubbard_BCS() {
+MPOGen_Hubbard_UBCS::MPOGen_Hubbard_UBCS(const char* m_input): MPOGen(m_input) {
+  // open input file
+  std::ifstream in(input.c_str());
+  in >> nsite >> ntei >> U;
+  H0a.ReSize(nsite, nsite);
+  H0b.ReSize(nsite, nsite);  
+  D0.ReSize(nsite, nsite);
+  fa.resize(ntei);
+  ga.resize(ntei);
+  da.resize(ntei);
+  fb.resize(ntei);
+  gb.resize(ntei);
+  db.resize(ntei);
+  // read H0
+  read_matrix(H0a, "h0a", in);
+  assert((H0a.t()-H0a).NormFrobenius() < 1e-12);
+  read_matrix(H0b, "h0b", in);
+  assert((H0b.t()-H0b).NormFrobenius() < 1e-12);
+  // read D0
+  read_matrix(D0, "d0", in);
+  // read f,d,g
+  for (int i = 0; i < ntei; ++i) {
+    // read fa
+    fa[i].ReSize(nsite, nsite);
+    read_matrix(fa[i], "f(site "+std::to_string(i)+")a", in);
+    // read ga
+    ga[i].ReSize(nsite, nsite);
+    read_matrix(ga[i], "g(site "+std::to_string(i)+")a", in);
+    // read da
+    da[i].ReSize(nsite, nsite);
+    read_matrix(da[i], "d(site "+std::to_string(i)+")a", in);
+    // read fb
+    fb[i].ReSize(nsite, nsite);
+    read_matrix(fb[i], "f(site "+std::to_string(i)+")b", in);
+    // read gb
+    gb[i].ReSize(nsite, nsite);
+    read_matrix(gb[i], "g(site "+std::to_string(i)+")b", in);
+    // read db
+    db[i].ReSize(nsite, nsite);
+    read_matrix(db[i], "d(site "+std::to_string(i)+")b", in);
+  }
+  in.close();
 }
+
+void MPOGen_Hubbard_UBCS::read_matrix(Matrix& A, string name, std::ifstream& in) {
+  string line = "";
+  while (line[0] != '!') {
+    getline(in, line);
+  }
+  assert(line.substr(0, name.length()+1).compare("!"+name) == 0);
+  for (int i = 0; i < nsite; ++i) {
+    for (int j = 0; j < nsite; ++j) {
+      in >> A(i+1, j+1);
+    }
+  }
+}
+
+const MPO<Quantum> MPOGen_Hubbard_UBCS::generate(int M) {
+  MPO<Quantum> H(nsite);
+  zero(H);
+  // first add the H0 part
+  for (int i = 0; i < nsite; ++i) {
+    ColumnVector temp(nsite);
+    temp = 0.;
+    temp(i+1) = 1.;
+    axpy(1., create_op(temp, Spin::Up) * anni_op(H0a.Row(i+1).t(), Spin::Up), H);
+    axpy(1., create_op(temp, Spin::Down) * anni_op(H0b.Row(i+1).t(), Spin::Down), H);
+    compress(H, MPS_DIRECTION::Left, 0);
+    compress(H, MPS_DIRECTION::Right, 0);
+  }
+  // then Delta0 part
+  if (D0.NormFrobenius() > 1e-10) {
+    for (int i = 0; i < nsite; ++i) {
+      ColumnVector temp(nsite);
+      temp = 0.;
+      temp(i+1) = 1.;
+      axpy(1., create_op(temp, Spin::Up) * create_op(D0.Row(i+1).t(), Spin::Down), H);
+      axpy(1., anni_op(temp, Spin::Down) * anni_op(D0.Column(i+1), Spin::Up), H);
+      compress(H, MPS_DIRECTION::Left, 0);
+      compress(H, MPS_DIRECTION::Right, 0);
+    }
+  }
+  // last, the interaction part
+  for (int t = 0; t < ntei; ++t) {
+    MPO<Quantum> op1(nsite), op2(nsite);
+    zero(op1);
+    zero(op2);
+    for (int i = 0; i < nsite; ++i) {
+      ColumnVector temp(nsite);
+      temp = 0.;
+      temp(i+1) = 1.;
+      // op1
+      axpy(1., create_op(temp, Spin::Up) * anni_op(fa[t].Row(i+1).t(), Spin::Up), op1);
+      axpy(1., create_op(temp, Spin::Down) * anni_op(ga[t].Row(i+1).t(), Spin::Down), op1);
+      axpy(1., create_op(temp, Spin::Up) * create_op(da[t].Row(i+1).t(), Spin::Down), op1);
+      axpy(1., anni_op(temp, Spin::Down) * anni_op(da[t].Column(i+1), Spin::Up), op1);
+      // op2
+      axpy(1., create_op(temp, Spin::Down) * anni_op(fb[t].Row(i+1).t(), Spin::Down), op2);
+      axpy(1., create_op(temp, Spin::Up) * anni_op(gb[t].Row(i+1).t(), Spin::Up), op2);
+      axpy(1., create_op(temp, Spin::Down) * create_op(db[t].Row(i+1).t(), Spin::Up), op2);
+      axpy(1., anni_op(temp, Spin::Up) * anni_op(db[t].Column(i+1), Spin::Down), op2);
+      compress(op1, MPS_DIRECTION::Left, 0);
+      compress(op1, MPS_DIRECTION::Right, 0);
+      compress(op2, MPS_DIRECTION::Left, 0);
+      compress(op2, MPS_DIRECTION::Right, 0);      
+    }
+    axpy(U, op1 * op2, H);
+    compress(H, MPS_DIRECTION::Left, 0);
+    compress(H, MPS_DIRECTION::Right, 0);
+  }
+  return std::move(H);
+}
+
