@@ -18,7 +18,7 @@ NEWMATLIB=-L./newmat10 -lnewmat
 INCLUDEFLAGS=-I. $(BLASINC) $(BOOSTINC) $(BTASINC)
 LIBRARYFLAGS=    $(BLASLIB) $(BOOSTLIB) $(NEWMATLIB)
 
-SRC_SAMPLE = main.C dmrg.C driver.C btas_template_specialize.C mpogen.C
+SRC_SAMPLE = main.C dmrg.C driver.C btas_template_specialize.C mpogen.C mpogen2.C
 OBJ_SAMPLE = $(SRC_SAMPLE:.C=.o)
 
 .C.o	:

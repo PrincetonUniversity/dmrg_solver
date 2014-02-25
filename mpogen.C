@@ -3,6 +3,7 @@
 #include <sstream>      // std::istringstream
 #include <iostream>
 #include <omp.h>
+#include <boost/algorithm/string.hpp>
 
 using std::cout;
 using std::endl;
@@ -20,8 +21,7 @@ void physical(Qshapes<Quantum>& qp, Dshapes& dp) {
 
 void zero(MPO<Quantum>& mpo) {
   int nsite = mpo.size();
-  Qshapes<Quantum> qzero;
-  qzero.push_back(Quantum(0));
+  Qshapes<Quantum> qzero(1, Quantum(0));
   Dshapes dzero(qzero.size(), 1);
   Qshapes<Quantum> qp;
   Dshapes dp;
@@ -473,4 +473,3 @@ const MPO<Quantum> MPOGen_Hubbard_UBCS::generate(int M) {
   }
   return std::move(H);
 }
-

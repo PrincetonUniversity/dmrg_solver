@@ -24,6 +24,7 @@ public:
     cout << "Read input file: " << input << endl;
   }
   virtual const MPO<Quantum> generate(int M = 0) = 0;
+  virtual bool is_unrestricted() const = 0;
   virtual ~MPOGen() {}
 };
 
@@ -42,6 +43,7 @@ private:
 public:
   MPOGen_Hubbard_BCS(const char* m_input);
   virtual const MPO<Quantum> generate(int M = 0) final;
+  bool is_unrestricted() const {  return false;};
   ~MPOGen_Hubbard_BCS() {}
 private:
   // data
@@ -58,6 +60,7 @@ private:
 public:
   MPOGen_Hubbard_UBCS(const char* m_input);
   virtual const MPO<Quantum> generate(int M = 0) final;
+  bool is_unrestricted() const {  return true;};  
   ~MPOGen_Hubbard_UBCS() {}
 private:
   // data
@@ -65,6 +68,26 @@ private:
   double U;
   Matrix H0a, H0b, D0;
   vector<Matrix> fa, fb, ga, gb, da, db;
+};
+
+class MPOGen_Hubbard_Explicit: public MPOGen {
+private:
+  // functions
+public:
+  MPOGen_Hubbard_Explicit(const char* m_input);
+  virtual const MPO<Quantum> generate(int M = 0) final;
+  bool is_unrestricted() const {return !restricted; };
+  ~MPOGen_Hubbard_Explicit() {}
+private:
+  // data
+  bool restricted;
+  int nsite; // number of sites, number of 2body terms
+  double U;
+  SymmetricMatrix H0a, H0b;
+  Matrix D0; // for both restricted and unrestricted
+  SymmetricMatrix vccdd_aa, vccdd_bb, vccdd_ab;
+  Matrix vcccd_a, vcccd_b;
+  Matrix vcccc;
 };
 
 #endif

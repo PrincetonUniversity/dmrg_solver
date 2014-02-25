@@ -61,6 +61,14 @@ void init(MpStorages& sites, MPS<Quantum>& A, int M) {
   sites[0].lopr = 1.0;
 }
 
+bool dump(string file) {
+  std::ifstream in(file.c_str());
+  string first_line;
+  getline(in, first_line);
+  in.close();  
+  return first_line.find("&") != std::string::npos;
+}
+
 bool uhfb(string file) {
   std::ifstream in(file.c_str());
   string first_line;
@@ -79,12 +87,18 @@ int main(int argc, char* argv[])
   
   string prefix(argv[1]);
 
+  bool unrestricted;
   MPOGen* hgen;
-  bool unrestriced = uhfb(prefix + "/DMRG.in");
-  if (unrestriced) {
-    hgen = new MPOGen_Hubbard_UBCS((prefix + "/DMRG.in").c_str());
+  if (dump(prefix + "/DMRG.in")) {
+    hgen = new MPOGen_Hubbard_Explicit((prefix + "/DMRG.in").c_str());
+    unrestricted = hgen->is_unrestricted();
   } else {
-    hgen = new MPOGen_Hubbard_BCS((prefix + "/DMRG.in").c_str());
+    unrestricted = uhfb(prefix + "/DMRG.in");
+    if (unrestricted) {
+      hgen = new MPOGen_Hubbard_UBCS((prefix + "/DMRG.in").c_str());
+    } else {
+      hgen = new MPOGen_Hubbard_BCS((prefix + "/DMRG.in").c_str());
+    }
   }
   cout << "\tConstructing MPOs" << endl; 
   MPO<Quantum> H = hgen->generate(); // matrix product operator
@@ -144,7 +158,7 @@ int main(int argc, char* argv[])
   frdm << "!RDM.B" << setw(4) << nsite << endl << setw(20) << fixed << rdm(A, Spin::Down);
   frdm.close();
   frdm.open(prefix+"/KAPPA");
-  frdm << "!KAPPA" << setw(4) << nsite << endl << setw(20) << fixed << kappa(A, !unrestriced);
+  frdm << "!KAPPA" << setw(4) << nsite << endl << setw(20) << fixed << kappa(A, !unrestricted);
   frdm.close();
   return 0;
 }
