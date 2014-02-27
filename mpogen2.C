@@ -13,6 +13,21 @@ using boost::token_compress_on;
 using boost::trim;
 using std::array;
 
+MPS<Quantum> vacuum(int L, const Qshapes<Quantum> &qp, const Dshapes &dp) {
+  MPS<Quantum> A = create(L, Quantum::zero(), qp, dp, 1, []() -> double {return 0.;});
+  DArray<3> block;  
+  for (int i = 0; i < A.size(); ++i) {
+    for (auto it = A[i].begin(); it != A[i].end(); ++it) {
+      auto q = A[i].qindex(A[i].index(it->first));
+      if (q == qarray(0, 0, 0)) {
+        block.reference(*(it->second));
+        block(0, 0, 0) = 1.;
+      }
+    }
+  }
+  return std::move(A);
+}
+
 MPOGen_Hubbard_Explicit::MPOGen_Hubbard_Explicit(const char* m_input): MPOGen(m_input) {
   // open input file
   std::ifstream in(input.c_str());
@@ -20,14 +35,14 @@ MPOGen_Hubbard_Explicit::MPOGen_Hubbard_Explicit(const char* m_input): MPOGen(m_
   getline(in, line);
   trim(line);
   vector<string> tok;
-  boost::split(tok, line, is_any_of(", \t"), token_compress_on);
+  boost::split(tok, line, is_any_of("=, \t"), token_compress_on);
   nsite = atoi(tok[2].c_str());
   getline(in, line);
   getline(in, line);
 
   getline(in, line);
   trim(line);
-  boost::split(tok, line, is_any_of(", \t"), token_compress_on);
+  boost::split(tok, line, is_any_of("=, \t"), token_compress_on);
   if (boost::iequals(tok[0], "IUHF")) {
     restricted = false;
     H0a.ReSize(nsite);
@@ -40,7 +55,7 @@ MPOGen_Hubbard_Explicit::MPOGen_Hubbard_Explicit(const char* m_input): MPOGen(m_
     vccdd_aa = 0;
     vccdd_bb.ReSize(nsite * nsite);
     vccdd_bb = 0;
-    vccdd_ab.ReSize(nsite * nsite);
+    vccdd_ab.ReSize(nsite * nsite, nsite * nsite);
     vccdd_ab = 0;
     vcccd_a.ReSize(nsite*(nsite-1)/2, nsite*nsite);
     vcccd_a = 0;
@@ -213,11 +228,11 @@ const MPO<Quantum> MPOGen_Hubbard_Explicit::generate(int M) {
   for (int i = 0; i < nsite; ++i) {
     for (int j = 0; j < nsite; ++j) {
       array<int, 2> idx1 = {i, j};
-      array<int, 2> ridx1 = {j, i};      
+      array<int, 2> ridx1 = {j, i};
       for (int k = 0; k < nsite; ++k) {
         for (int l = 0; l < nsite; ++l) {
           array<int, 2> idx2 = {k, l};
-          array<int, 2> ridx2 = {l, k};          
+          array<int, 2> ridx2 = {l, k};
           if (restricted) {
             if (fabs(vccdd_aa(i*nsite+l+1, j*nsite+k+1)) > 1e-10) {
               if (i != j && k != l) {

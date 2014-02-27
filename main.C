@@ -116,7 +116,8 @@ int main(int argc, char* argv[])
   Qshapes<Quantum> qp = {Quantum(1), Quantum(-1), Quantum(0)};
   Dshapes dp = {1, 1, 2};
   physical(qp, dp);
-  MPS<Quantum> A = create(nsite, Quantum::zero(), qp, dp, M, random_gen);
+  MPS<Quantum> A = vacuum(nsite, qp, dp);
+
   init(sites, A, M);
 
   cout << "\tCalling DMRG program ( two-site algorithm) " << endl;

@@ -36,6 +36,16 @@ MPO<Quantum> anni_op(const ColumnVector&, Spin);
 Matrix rdm(const MPS<Quantum>&, Spin); // <a_i\sigma^\dagger a_j\sigma>
 Matrix kappa(const MPS<Quantum>& A, bool symm = true); // <a_i\up a_j\down>
 
+MPS<Quantum> vacuum(int L, const Qshapes<Quantum> &qp, const Dshapes &dp);
+
+inline TVector<Quantum, 4> qarray(int ql, int qbra, int qket, int qr) {
+  return make_array(Quantum(ql), Quantum(qbra), -Quantum(qket), -Quantum(qr));
+}
+
+inline TVector<Quantum, 3> qarray(int ql, int qp, int qr) {
+  return make_array(Quantum(ql), Quantum(qp), -Quantum(qr));
+}
+
 class MPOGen_Hubbard_BCS: public MPOGen {
 private:
   // functions
@@ -85,7 +95,8 @@ private:
   double U;
   SymmetricMatrix H0a, H0b;
   Matrix D0; // for both restricted and unrestricted
-  SymmetricMatrix vccdd_aa, vccdd_bb, vccdd_ab;
+  SymmetricMatrix vccdd_aa, vccdd_bb;
+  Matrix vccdd_ab;
   Matrix vcccd_a, vcccd_b;
   Matrix vcccc;
 };

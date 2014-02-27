@@ -9,10 +9,6 @@ using std::cout;
 using std::endl;
 using std::getline;
 
-inline TVector<Quantum, 4> qarray(int ql, int qbra, int qket, int qr) {
-  return make_array(Quantum(ql), Quantum(qbra), -Quantum(qket), -Quantum(qr));
-}
-
 void physical(Qshapes<Quantum>& qp, Dshapes& dp) {
   qp = {Quantum(1), Quantum(-1), Quantum(0)};
   dp = {1, 1, 2};
@@ -444,32 +440,34 @@ const MPO<Quantum> MPOGen_Hubbard_UBCS::generate(int M) {
     }
   }
   // last, the interaction part
-  for (int t = 0; t < ntei; ++t) {
-    MPO<Quantum> op1(nsite), op2(nsite);
-    zero(op1);
-    zero(op2);
-    for (int i = 0; i < nsite; ++i) {
-      ColumnVector temp(nsite);
-      temp = 0.;
-      temp(i+1) = 1.;
-      // op1
-      axpy(1., create_op(temp, Spin::Up) * anni_op(fa[t].Row(i+1).t(), Spin::Up), op1);
-      axpy(1., create_op(temp, Spin::Down) * anni_op(ga[t].Row(i+1).t(), Spin::Down), op1);
-      axpy(1., create_op(temp, Spin::Up) * create_op(da[t].Row(i+1).t(), Spin::Down), op1);
-      axpy(1., anni_op(temp, Spin::Down) * anni_op(da[t].Column(i+1), Spin::Up), op1);
-      // op2
-      axpy(1., create_op(temp, Spin::Down) * anni_op(fb[t].Row(i+1).t(), Spin::Down), op2);
-      axpy(1., create_op(temp, Spin::Up) * anni_op(gb[t].Row(i+1).t(), Spin::Up), op2);
-      axpy(1., create_op(temp, Spin::Down) * create_op(db[t].Row(i+1).t(), Spin::Up), op2);
-      axpy(1., anni_op(temp, Spin::Up) * anni_op(db[t].Column(i+1), Spin::Down), op2);
-      compress(op1, MPS_DIRECTION::Left, 0);
-      compress(op1, MPS_DIRECTION::Right, 0);
-      compress(op2, MPS_DIRECTION::Left, 0);
-      compress(op2, MPS_DIRECTION::Right, 0);      
+  if (fabs(U) > 1e-8) {
+    for (int t = 0; t < ntei; ++t) {
+      MPO<Quantum> op1(nsite), op2(nsite);
+      zero(op1);
+      zero(op2);
+      for (int i = 0; i < nsite; ++i) {
+        ColumnVector temp(nsite);
+        temp = 0.;
+        temp(i+1) = 1.;
+        // op1
+        axpy(1., create_op(temp, Spin::Up) * anni_op(fa[t].Row(i+1).t(), Spin::Up), op1);
+        axpy(1., create_op(temp, Spin::Down) * anni_op(ga[t].Row(i+1).t(), Spin::Down), op1);
+        axpy(1., create_op(temp, Spin::Up) * create_op(da[t].Row(i+1).t(), Spin::Down), op1);
+        axpy(1., anni_op(temp, Spin::Down) * anni_op(da[t].Column(i+1), Spin::Up), op1);
+        // op2
+        axpy(1., create_op(temp, Spin::Down) * anni_op(fb[t].Row(i+1).t(), Spin::Down), op2);
+        axpy(1., create_op(temp, Spin::Up) * anni_op(gb[t].Row(i+1).t(), Spin::Up), op2);
+        axpy(1., create_op(temp, Spin::Down) * create_op(db[t].Row(i+1).t(), Spin::Up), op2);
+        axpy(1., anni_op(temp, Spin::Up) * anni_op(db[t].Column(i+1), Spin::Down), op2);
+        compress(op1, MPS_DIRECTION::Left, 0);
+        compress(op1, MPS_DIRECTION::Right, 0);
+        compress(op2, MPS_DIRECTION::Left, 0);
+        compress(op2, MPS_DIRECTION::Right, 0);      
+      }
+      axpy(U, op1 * op2, H);
+      compress(H, MPS_DIRECTION::Left, 0);
+      compress(H, MPS_DIRECTION::Right, 0);
     }
-    axpy(U, op1 * op2, H);
-    compress(H, MPS_DIRECTION::Left, 0);
-    compress(H, MPS_DIRECTION::Right, 0);
   }
   return std::move(H);
 }
